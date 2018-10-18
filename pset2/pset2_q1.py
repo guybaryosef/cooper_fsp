@@ -1,6 +1,7 @@
 #
 # Pset 2: Question 1
 # ECE478: Financial Signal Processing
+# Binomail Asset Pricing Model
 # By: Guy Bar Yosef
 #
 
