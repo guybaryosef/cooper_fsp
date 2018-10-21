@@ -258,8 +258,6 @@ def summarize(derivative_vals, v0, r, N):
                             'P=0.4, K_=0.4': E1[0], 'P=0.6, K_p=0.4': E2[0], 
                             'P=0.4, K_=0.6': E1[1], 'P=0.6, K_p=0.6': E2[1],
                             'P=0.4, K_=0p_tilday': E1[2], 'P=0.6, K_p=p_tilda': E2[2],
-                            
-                            
                             '      V0      ': v0 })
 
     print(table)
