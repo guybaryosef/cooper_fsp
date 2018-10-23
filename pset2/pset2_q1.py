@@ -5,9 +5,11 @@
 # By: Guy Bar Yosef
 #
 
+
 import numpy as np
 from astropy.table import Table
 import matplotlib.pyplot as plt
+
 
 
 def main():
@@ -38,6 +40,7 @@ exp_Rn = lambda u,d,n,p, : np.log10(u/d)*(n*p) + n*np.log10(d)
 var_Rn = lambda u,d,n,p : (np.log(u/d)**2) * n*p*(1-p)
 
 
+
 # Part b)
 def risk_free_prob(u,d,r):
     '''
@@ -47,6 +50,7 @@ def risk_free_prob(u,d,r):
     p_tilda = (1+r-d)/(u-d)
     q_tilda = (u-1-r)/(u-d)
     return p_tilda, q_tilda
+
 
 
 # Part c)
@@ -81,6 +85,7 @@ def replicate_portfolio(Vn_func, p, s0, path, N, u, d, r):
     x0 = (1/(1+r))*(p_tilda*Vn_func(K, s0, [1], u, d) + q_tilda*Vn_func(K, s0, [0], u, d) )
     delta.insert(0, (Vn_func(K, s0, [1], u, d) - Vn_func(K, s0, [0], u, d))/(s0*u - s0*d) )
     return x0, delta
+
 
 
 # Part d)
@@ -143,6 +148,7 @@ class Vn:
         return max_val 
 
 
+
 # Part e)
 strike_price = lambda exp_Rn, s0 : s0 * np.exp(exp_Rn)
 
@@ -169,6 +175,7 @@ def simulate_derivative_values(probabilities, p_tilda, L, N, s0, u, d):
             outer_iter.append( np.mean(inner_iter, axis=0) )
         expected_value_derivative.append(outer_iter)
     return expected_value_derivative
+
 
 
 # Part f)
@@ -238,6 +245,8 @@ def protfolio_strategy_approach(p, s0, N, u, d, r):
     plt.ylabel('Stock Price')
     plt.show()
 
+
+
 # Part h)
 def summarize(derivative_vals, v0, r, N):
     '''
@@ -259,7 +268,6 @@ def summarize(derivative_vals, v0, r, N):
                             'P=0.4, K_=0.6': E1[1], 'P=0.6, K_p=0.6': E2[1],
                             'P=0.4, K_=0p_tilday': E1[2], 'P=0.6, K_p=p_tilda': E2[2],
                             '      V0      ': v0 })
-
     print(table)
 
 
