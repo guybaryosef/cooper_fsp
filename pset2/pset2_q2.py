@@ -125,13 +125,14 @@ def graphPathAndReflected(paths, m):
 
     time = np.linspace(paths[0][0], paths[0][1], paths[1].shape[1])
     for count, (org, ref) in enumerate(zip(paths[1], reflected_paths)):
-        plt.figure()
+        f = plt.figure()
         plt.plot(time, org, label='Original Path')
         plt.plot(time, ref, label='Reflected Path')
         plt.xlabel('Time')
         plt.ylabel('Value')
         plt.title('Brownian Motion Path #%d, m = %d'% (count, m))
         plt.legend()
+        f.savefig("pset2_q2_reflection_%d.pdf"%(count), bbox_inches='tight')
         plt.show()
         
 
@@ -174,14 +175,15 @@ def graphWalledPaths(paths, wall_val1, wall_val2):
     _, bounded = reflectedWalls(paths, wall_val1, wall_val2)
     
     time = np.linspace(paths[0][0], paths[0][1], paths[1].shape[1])
-    for org_path, bounded_path in zip(paths[1], bounded):
-        plt.figure()
+    for count, (org_path, bounded_path) in enumerate(zip(paths[1], bounded)):
+        f = plt.figure()
         plt.plot(time, org_path, label='Original Path')
         plt.plot(time, bounded_path, label='Reflected Path')
         plt.xlabel('Time')
         plt.ylabel('Value')
         plt.title('Original and Walled Paths, between %d and %d'%(wall_val1, wall_val2) )
         plt.legend()
+        f.savefig("pset2_q2_wall_%d.pdf"%(count), bbox_inches='tight')
         plt.show()
 
 

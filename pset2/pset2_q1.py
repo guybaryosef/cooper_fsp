@@ -224,7 +224,7 @@ def protfolio_strategy_approach(p, s0, N, u, d, r):
         print('European Call', x0_cal, end='--')
         print('European Put', x0_put)
 
-        plt.figure()
+        f = plt.figure()
         plt.plot(time, delta_max, label='Max Stock Price')
         plt.plot(time, delta_cal, label='European Call')
         plt.plot(time, delta_put, label='European Put')
@@ -232,17 +232,19 @@ def protfolio_strategy_approach(p, s0, N, u, d, r):
         plt.xlabel('Steps')
         plt.ylabel('Portfolio Strategy')
         plt.legend()
+        f.savefig("pset2_q1_1_%d.pdf"%(i), bbox_inches='tight')
         plt.show()
 
     print('\n')
 
-    plt.figure()
+    f = plt.figure()
     for i, stock in enumerate(stock_history_path):
         plt.plot(time, stock[:N], label='Stock $S_%s$' % i)
     plt.legend()
     plt.title('Stock Price of the Three Paths')
     plt.xlabel('Steps')
     plt.ylabel('Stock Price')
+    f.savefig("pset2_q1_2.pdf", bbox_inches='tight')
     plt.show()
 
 
