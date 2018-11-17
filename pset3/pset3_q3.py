@@ -1,6 +1,6 @@
-# Pset 3: Question 3
+# Pset 3: Questions 3 and 4
 # ECE478: Financial Signal Processing
-# Corrolated Brownian Motion
+# Corrolated Brownian Motion and Portfolio Volatility
 # By: Guy Bar Yosef
 
 import numpy as np
@@ -24,10 +24,15 @@ def main():
     cor_GBM_proc = simulateGBMprocesses(count, N, delta, cov_mat, alpha_vec, sigma_mat)
     plot_paths(cor_GBM_proc, 'Correlated Brownian Motion Processes Pairs')
 
+    # portfolio simulations
+    w_min = np.transpose([[0,1]])
+    w_max = np.transpose([[1,0]])
+    port_paths = portfolioSimulations(count, N, delta, w_min, w_max, cov_mat, sigma_mat, alpha_vec)
+    plot_paths(port_paths, 'Miniimally and Maximally Volatile Portfolios')
 
 
 
-# part a)
+# part 3a)
 def generateGaussianRV(mean_vec, covariance_matrix, length):
     '''
     Generate a set of m independent Gaussian random vectors,
@@ -47,7 +52,7 @@ def generateGaussianRV(mean_vec, covariance_matrix, length):
 
 
 
-# part b)
+# part 3b)
 def generateBrownianMotion(N = 10**5, L = 1000, T = 1):
     '''
     Generate L paths of brownian motion from 
@@ -99,17 +104,18 @@ def plot_paths(corrolated_paths, title, end_time=1):
     '''
     time = np.linspace(0, end_time, corrolated_paths[0][0].shape[0])
     plt.figure()
-    plt.suptitle(title);
+    plt.suptitle(title)
     for i in range(len(corrolated_paths)):
         plt.subplot(2, len(corrolated_paths)//2, i+1)
         plt.plot(time, corrolated_paths[i][0])
         plt.plot(time, corrolated_paths[i][1])
         plt.title('Instance %d'%(i+1))
+        plt.xlabel('time')
     plt.show()
 
 
 
-# part c)
+# part 3c)
 def simulateGBMprocesses(count, N, delta, cov_mat, alpha_vec, sigma_mat):
     '''
     '''
@@ -129,6 +135,28 @@ def simulateGBMprocesses(count, N, delta, cov_mat, alpha_vec, sigma_mat):
     for i in range(GBM_processes_paths.shape[0]//2):
         output.append([GBM_processes_paths[2*i], GBM_processes_paths[2*i+1]])
     return output
+
+
+
+# 4)
+def portfolioSimulations(pairs, N, delta, w_min, w_max, cov_mat, sigma, alpha):
+    '''
+    Given the weights for the portfolios of two stocks driven by correlated
+    brownian motions that correspond to the least and most volatile portfolios
+    (w_min and w_max respectivly), this function simulates 'pairs'instances
+    of the portfolios and returns their paths.
+    '''
+    cov_prime = lambda C: sigma @ C @ np.transpose(sigma)
+    sigma_prime = lambda C, w: np.sqrt(np.sum(np.transpose(w) @ cov_prime(C) @ w))
+
+    paths = pairs*[np.ones([2, N])]
+    for i in range(pairs):
+        for j in range(1,N):
+            paths[i][0,j] = paths[i][0,j-1]*(1 + (np.transpose(w_min) @ alpha)*delta + \
+                                sigma_prime(cov_mat, w_min)*np.random.normal(0, delta))   
+            paths[i][1,j] = paths[i][1,j-1]*(1 + (np.transpose(w_max) @ alpha)*delta + \
+                                sigma_prime(cov_mat, w_max)*np.random.normal(0, delta))
+    return paths
 
 
 

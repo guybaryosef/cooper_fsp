@@ -113,8 +113,8 @@ def approximateMartingales(GBM_paths, initial_condition_index, sigma, delta, int
     print('\nActually, this becomes a fairly trivial issue, because dX = 0*dt + sigma*X*dW '
     'and it is clearly obvious, therefore, that Xi[N] = Xi[N/2] + Y where Y is a random '
     'variable that is independent of the filtration up to time N/2 and (under the risk-'
-    'neutral measure) has mean value equal to the interest rate, so obviously'
-    'E_tilda[ X[N]/D[N] | N/2 ] = X[N/2]/D[N].\n')
+    'neutral measure) has mean value 0, so obviously'
+    'E_tilda[ X[N] | N/2 ] = X[N/2].\n')
 
     variance_estimation = 0
     for org, est in zip(original_inital_values, discounted_price_approx):
