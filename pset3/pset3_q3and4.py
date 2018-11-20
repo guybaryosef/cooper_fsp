@@ -18,15 +18,15 @@ def main():
     
     # generate and plot 10 pairs of corrolated brownian motion pairs
     cor_BM_paths = generateCorrolatedBM(count, N, delta, cov_mat)
-    plot_paths(cor_BM_paths, 'Correlated Brownian Motion Pairs')
+    plot_paths(cor_BM_paths, 'Correlated Brownian Motion Pairs', N*delta)
 
     # generate and plot 10 pairs of corrolated brownian motion processes
     cor_GBM_proc = simulateGBMprocesses(count, N, delta, cov_mat, alpha_vec, sigma_mat)
-    plot_paths(cor_GBM_proc, 'Correlated Brownian Motion Processes Pairs')
+    plot_paths(cor_GBM_proc, 'Correlated Brownian Motion Processes Pairs', N*delta)
 
     # portfolio simulations
-    w_min = np.transpose([[0,1]])
-    w_max = np.transpose([[1,0]])
+    w_min = np.transpose([[0, 1]])
+    w_max = np.transpose([[1505540, 2509324]]) # this seems off to say the least...
     port_paths = portfolioSimulations(count, N, delta, w_min, w_max, cov_mat, sigma_mat, alpha_vec)
     plot_paths(port_paths, 'Miniimally and Maximally Volatile Portfolios')
 
@@ -42,56 +42,32 @@ def generateGaussianRV(mean_vec, covariance_matrix, length):
 
     This is done using the Cholesky decomposition.
     '''
-    gaussian_mat = np.random.normal(0, 1, [len(mean_vec), length])
+    gaussian_mat = np.random.normal(0, 1, [length, len(mean_vec)])
 
     C = np.linalg.cholesky(covariance_matrix)
 
     for i, mean in enumerate(mean_vec):
-        gaussian_mat[i] = mean + C @ gaussian_mat[i]
+        gaussian_mat[:,i] = mean + C @ gaussian_mat[:,i]
     return gaussian_mat
 
 
 
 # part 3b)
-def generateBrownianMotion(N = 10**5, L = 1000, T = 1):
-    '''
-    Generate L paths of brownian motion from 
-    time 0 to time T, with N steps in between.
-    Returns a list of a list of the start and end times
-    as well as the steps of the set of paths.
-
-    Note: We are approximating brownian motion using a 
-    symmetric random walk.
-    '''
-    paths = np.zeros([L,N])
-    step_increment = 1/np.sqrt(N)
-    for path in range(L):
-        path_val = np.random.binomial(1, 1/2, N-1)
-
-        for step, step_val in enumerate(path_val):
-            if step_val:
-                paths[path,step+1] = paths[path,step] + step_increment
-            else:
-                paths[path,step+1] = paths[path,step] - step_increment
-    return [[0, T], paths]
-
-
-
 def generateCorrolatedBM(count, N, delta, covariance_mat):
     '''
     Generates 'count' pairs of corrolated brownian motions,
     each with N steps and step size 'delta', as well as 
     each pair possessing the inputted covariance matrix.
-    '''
+    '''    
+    corrolated_BM_paths = np.array(count*[np.ones([2,N])])
 
-    BM_paths = generateBrownianMotion(N, 2*count, N*delta)
-    
-    corrolated_BM_paths = []
     for i in range(count):
-        ro = covariance_mat[1][0] / np.sqrt(covariance_mat[0][0]*covariance_mat[1][1])
+        variances = generateGaussianRV([0]*(N-1), covariance_mat, 2)
 
-        corrolated_BM_paths.append([BM_paths[1][i], \
-                ro*BM_paths[1][i] + np.sqrt(1-ro**2)*BM_paths[1][i+1]])
+        for j in range(1,N):
+            corrolated_BM_paths[i,0,j] = corrolated_BM_paths[i,0,j-1] + variances[0,j-1]
+            corrolated_BM_paths[i,1,j] = corrolated_BM_paths[i,1,j-1] + variances[1,j-1]
+
     return corrolated_BM_paths
 
 
@@ -111,6 +87,7 @@ def plot_paths(corrolated_paths, title, end_time=1):
         plt.plot(time, corrolated_paths[i][1])
         plt.title('Instance %d'%(i+1))
         plt.xlabel('time')
+    plt.savefig('./figures/Pset3_q3_%s'%(title))
     plt.show()
 
 
@@ -118,23 +95,22 @@ def plot_paths(corrolated_paths, title, end_time=1):
 # part 3c)
 def simulateGBMprocesses(count, N, delta, cov_mat, alpha_vec, sigma_mat):
     '''
+    Simulates pairs of stochastic processes that are each driven by correlated
+    brownian motions with a 'cov_mat' covariance matrix.
+    Will return 'count' pairs of of processes, each with N steps.
     '''
-    GBM_processes_paths = np.ones([2*count, N])
+    GBM_processes_paths = np.array(count*[np.ones([2, N])])
 
     for i in range(count):
         for j in range(1, N):
             dWs = generateGaussianRV([0,0], cov_mat, 2)
-            GBM_processes_paths[2*i,j] = GBM_processes_paths[2*i,j-1] * \
+            GBM_processes_paths[i,0,j] = GBM_processes_paths[i,0,j-1] * \
                                         (1 + alpha_vec[0] + np.sum(sigma_mat[0] @ dWs))
 
             dWs = generateGaussianRV([0,0], cov_mat, 2)
-            GBM_processes_paths[2*i+1,j] = GBM_processes_paths[2*i+1,j-1] * \
+            GBM_processes_paths[i,1,j] = GBM_processes_paths[i,1,j-1] * \
                                         (1 + alpha_vec[1] + np.sum(sigma_mat[1] @ dWs))
-
-    output = []
-    for i in range(GBM_processes_paths.shape[0]//2):
-        output.append([GBM_processes_paths[2*i], GBM_processes_paths[2*i+1]])
-    return output
+    return GBM_processes_paths
 
 
 
@@ -146,16 +122,19 @@ def portfolioSimulations(pairs, N, delta, w_min, w_max, cov_mat, sigma, alpha):
     (w_min and w_max respectivly), this function simulates 'pairs'instances
     of the portfolios and returns their paths.
     '''
-    cov_prime = lambda C: sigma @ C @ np.transpose(sigma)
-    sigma_prime = lambda C, w: np.sqrt(np.sum(np.transpose(w) @ cov_prime(C) @ w))
-
-    paths = pairs*[np.ones([2, N])]
+    processes_paths = simulateGBMprocesses(pairs, N, delta, cov_mat, alpha, sigma)
+    
+    paths = []
     for i in range(pairs):
+        V_min_paths = np.ones([N])
+        V_max_paths = np.ones([N])
+
         for j in range(1,N):
-            paths[i][0,j] = paths[i][0,j-1]*(1 + (np.transpose(w_min) @ alpha)*delta + \
-                                sigma_prime(cov_mat, w_min)*np.random.normal(0, delta))   
-            paths[i][1,j] = paths[i][1,j-1]*(1 + (np.transpose(w_max) @ alpha)*delta + \
-                                sigma_prime(cov_mat, w_max)*np.random.normal(0, delta))
+            V_min_paths[j] = np.sum(np.transpose(w_min) @ processes_paths[i,:,j])
+            V_min_paths[j] = np.sum(np.transpose(w_max) @ processes_paths[i,:,j])
+        
+        paths.append([V_min_paths, V_max_paths])
+
     return paths
 
 

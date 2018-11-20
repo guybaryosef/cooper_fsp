@@ -43,7 +43,7 @@ def generateGBM(M, N, delta, sigma):
     GBM_paths = np.ones([M,N])
     for i in range(M):
         for j in range(1, N):
-            GBM_paths[i,j] = GBM_paths[i,j-1]*(1 + alpha*delta + sigma*np.random.normal(0, delta))
+            GBM_paths[i,j] = GBM_paths[i,j-1]*(1 + alpha*delta + sigma*np.random.normal(0, np.sqrt(delta)))
     
     return GBM_paths
 
@@ -64,6 +64,7 @@ def graphPlots(paths, end_time):
     plt.xlabel("Time")
     plt.title("10 Geometric Brownian Motions")
     plt.legend()
+    plt.savefig('./figures/Pset3_q1_GeometricBrownianMotions')
     plt.show()
 
 
@@ -97,12 +98,12 @@ def approximateMartingales(GBM_paths, initial_condition_index, sigma, delta, int
 
         # find final value and use martingale property to go back to X_hat(initial_condition)
         for i in range(1000):
-            x_path_cur_val = cur[initial_condition_index]
+            x_path_cur_val = cur[initial_condition_index]*np.exp(-(initial_condition_index)*interest_rate)
 
             for _ in range(1, path_len):
-                x_path_cur_val *= (1 + sigma*np.random.normal(0, delta)) 
+                x_path_cur_val *= (1 + sigma*np.random.normal(0, np.sqrt(delta))) 
 
-            paths_discounted_val[i] = x_path_cur_val*np.exp(path_len*interest_rate)
+            paths_discounted_val[i] = x_path_cur_val*np.exp((path_len)*interest_rate)
 
         discounted_price_approx.append(np.mean(paths_discounted_val))
     
@@ -113,13 +114,13 @@ def approximateMartingales(GBM_paths, initial_condition_index, sigma, delta, int
     print('\nActually, this becomes a fairly trivial issue, because dX = 0*dt + sigma*X*dW '
     'and it is clearly obvious, therefore, that Xi[N] = Xi[N/2] + Y where Y is a random '
     'variable that is independent of the filtration up to time N/2 and (under the risk-'
-    'neutral measure) has mean value 0, so obviously'
+    'neutral measure) has mean value 0, so obviously '
     'E_tilda[ X[N] | N/2 ] = X[N/2].\n')
 
     variance_estimation = 0
     for org, est in zip(original_inital_values, discounted_price_approx):
         variance_estimation += (org-est)**2
-    print('The estimation for THE VARIANCE is %8f'% (variance_estimation*(1/path_count)))
+    print('The estimation for THE VARIANCE is %E'% (variance_estimation*(1/path_count)))
 
 
 

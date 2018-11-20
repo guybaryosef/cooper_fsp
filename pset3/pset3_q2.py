@@ -17,9 +17,9 @@ def main():
     K = [0.1, 0.3, 0.8]
     
     #lambda functions for interest rate parameters
-    b_t = lambda t: K[1]*(1.1 + np.sin(np.pi*t/end_time))
+    b_t = lambda t:     K[1]*(1.1 + np.sin(np.pi*t/end_time))
     sigma_t = lambda t: K[2]*(1.1 + np.cos(4*np.pi*t/end_time))
-    a_t = lambda t: (1/2)*sigma_t(t)**2 + K[0]*(1.1 + np.cos(np.pi*t/end_time))
+    a_t = lambda t:     (1/2)*sigma_t(t)**2 + K[0]*(1.1 + np.cos(np.pi*t/end_time))
 
     # preliminary analysis of the lambda functions above
     plotParameters(end_time, b_t, sigma_t, a_t, end_time)
@@ -64,13 +64,13 @@ def simulateInterestRate(b_t, sigma_t, a_t, M=10, N=250, endTime=1):
 
             # iterate the interest rates, keeping count of the exceptions
             paths_HW[i,j] = paths_HW[i,j-1] + (a_t(t) - b_t(t)*paths_HW[i,j-1])*(endTime/N) + \
-                                                sigma_t(t)*np.random.normal(0, endTime/N)
+                                                sigma_t(t)*np.random.normal(0, np.sqrt(endTime/N))
             if paths_HW[i,j] <= exception_tolerance:
                 exception_counts[0] += 1
                 paths_HW[i,j] = exception_tolerance
 
             paths_CIR[i,j] = paths_CIR[i,j-1] + (a_t(t) - b_t(t)*paths_CIR[i,j-1])*(endTime/N) + \
-                                                sigma_t(t)*np.random.normal(0, endTime/N)
+                                                sigma_t(t)*np.random.normal(0, np.sqrt(endTime/N))
 
             if paths_CIR[i,j] <= exception_tolerance:
                 exception_counts[1] += 1
@@ -93,6 +93,7 @@ def plottingInterestRatePaths(list_of_interest_rates, end_time=1):
     plt.xlabel('time')
     plt.ylabel('$R^{HW}$')
     plt.legend()
+    plt.savefig('./figures/Pset3_q2_SimulationOfHW')
     plt.show()
 
     plt.figure()
@@ -101,7 +102,9 @@ def plottingInterestRatePaths(list_of_interest_rates, end_time=1):
     plt.title('10-path Simulation of $R^{CIR}$')
     plt.xlabel('time')
     plt.ylabel('$R^{CIR}$')
+    
     plt.legend()
+    plt.savefig('./figures/Pset3_q2_SimulationOfCIR')
     plt.show()
 
     print('\nThe K parameters were chosen so that the interest rate neither'
@@ -139,6 +142,7 @@ def findMeanVariance(b_t, sigma_t, a_t, M=1000, N=250, end_time=1):
     plt.title('Variance of the Interest Rates')
     plt.xlabel('time')
     plt.legend()
+    plt.savefig('./figures/Pset3_q2_ExpVar')
     plt.show()
 
     return expected_values, variances
@@ -165,6 +169,7 @@ def plotParameters(T, b_t, sigma_t, a_t, end_time):
     plt.subplot(1,3,3)
     plt.plot(time, a_t(time))
     plt.title('$a_t$ parameter')
+    plt.savefig('./figures/Pset3_q2_Parameters')
     plt.show()
 
 
