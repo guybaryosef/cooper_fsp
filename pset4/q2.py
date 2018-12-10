@@ -13,7 +13,7 @@ import pandas as pd
 def main():
 
     # get data for the user-specified year
-    year = '2000'
+    year = 2000
     year = input('Input year to test between 2000 and 2016: ')
     sp_daily_returns = pd.read_csv('./by_years/SP_daily_returns_'+year+'.csv')
     ff48_daily_returns = pd.read_csv('./by_years/48_IP_eq_w_daily_returns_'+year+'.csv')

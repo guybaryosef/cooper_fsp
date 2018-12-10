@@ -58,7 +58,6 @@ def preprocess():
     ###### LIBOR INTEREST RATE ######
     libor_daily = pd.read_csv("./input/LIBOR USD.csv")
 
-
     temp_id = []
     for i in libor_daily['Date']:
         temp = i.split('.')
@@ -102,9 +101,8 @@ def split_into_years(original_data, beg_year = 2000, amount_years = 17):
     return list_of_new_datasets
 
 
+
 # Basic Markovitz Portfolio Analysis
-
-
 def the_works(year):
     '''
     Runs all the functions we have made in this kernel.
@@ -175,6 +173,7 @@ def find_mean_cov(year):
         return -1    
 
     return mean_cov(benchmark)
+
 
 
 # Part B)
