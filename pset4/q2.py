@@ -66,7 +66,8 @@ def cov_coeff(r2, r1, delta12, w12):
     '''
     Finds the covariance coefficients of the error term
     of the AR(1) model predicting r2 from r1, with weight
-    w12 and delta term delta12.
+    w12 and delta term delta12, with the lag ranging from
+    0 to 20.
     '''
     e = r1 - delta12 - w12*r2
 

@@ -15,7 +15,7 @@ from arch.univariate import arch_model
 def main():
 
     # get data for the user-specified year
-    year='2000'
+    year='2002'
     #year = input('Input year to test between 2000 and 2016: ')
     sp_daily_returns = pd.read_csv('./by_years/SP_daily_returns_'+year+'.csv')
     ff48_daily_returns = pd.read_csv('./by_years/48_IP_eq_w_daily_returns_'+year+'.csv')
@@ -24,7 +24,7 @@ def main():
     
     # User specified coefficients:
     # arma coefficients
-    b = [0.2]
+    b = [0.3]
     a = [0.4]
     # garch coefficients
     c = [0.2, 0.3]
@@ -35,23 +35,23 @@ def main():
     r = generateARMA_GARCH(a, b, c, d, 250)
 
     # part b)
-    b_est, a_est = fit_ARMA_to_stock(r)
+    b_est, a_est, v_est = fit_ARMA_to_stock(r)
     print(b_est, a_est)
-
+    
     # part c)
-    get_GARCH_coeff(r)
+    # get_GARCH_coeff(r)
 
     # part d)
-    print('Now with a student-t distribution:')
+    print('\nNow with a student-t distribution:')
     r2 = generateARMA_GARCH(a, b, c, d, 250, 'student t')
-    b_est2, a_est2 = fit_ARMA_to_stock(r)
+    b_est2, a_est2, v_est2 = fit_ARMA_to_stock(r2)
     print(b_est2, a_est2)
-    get_GARCH_coeff(r2)
+    # get_GARCH_coeff(r2)
     
 
 
 # part a & e)
-def generateARMA_GARCH(a, b, c, d, step_count, distribution='gaussian'):
+def generateARMA_GARCH(a, b, c, d, step_count, distribution='gaussian', vsigma=1):
     '''
     Given the ARMA(1,1) coefficients b and a and the GARCH(1,1)
     coefficients c and d, generate a fictitious stock
@@ -70,12 +70,12 @@ def generateARMA_GARCH(a, b, c, d, step_count, distribution='gaussian'):
         sigma[i] = np.sqrt(c[0] + c[1]*v[i-1]**2 + d[0]*sigma[i-1]**2)
         
         if distribution == 'gaussian':
-            v[i] = sigma[i]*np.random.normal(0, 0.2)
+            v[i] = sigma[i]*np.random.normal(0, vsigma)
         else:
             v[i] = sigma[i]*np.random.standard_t(8)
 
         # ARMA simulation
-        fictitious_stock[i] = b[0]*fictitious_stock[i-1] - a[0]*v[i-1] + v[i]
+        fictitious_stock[i] = b[0]*fictitious_stock[i-1] + v[i] - a[0]*v[i-1]
     
     n = np.arange(0, 250)
     plt.figure()
@@ -93,24 +93,41 @@ def generateARMA_GARCH(a, b, c, d, step_count, distribution='gaussian'):
 
 
 # part b)
-def fit_ARMA_to_stock(r):
+def fit_ARMA_to_stock(r, v_sigma=1):
     '''
     Given a stock, this function fits an ARMA(1,1)
     model to it using least squares.
 
-    It returns (in the presented order) the AR and MA
-    coefficients.
+    The input v_sigma is the variance for the signal v,
+    the residual error.
+
+    This function returns the AR and MA coefficients.
     '''
     # least squares set-up
     y = np.transpose(np.array(r[1:], ndmin=2))
     x = np.transpose(np.array(r[:-1], ndmin=2))
-    b = np.linalg.inv(np.transpose(x) @ x) @ np.transpose(x) @ y
+    b = np.linalg.inv(np.transpose(x) @ x) @ np.transpose(x) @ y 
 
-    ar_residual = y - x @ b
-    
-    a = np.sum(ar_residual)
+    # calculate the lag 0 and 1 covariance of r, to find a
+    gamma_0 = np.cov(r)
 
-    return b[0,0], a
+    r_mean = r.mean()
+    gamma_1 = 0
+    for i in range(r.size-2):
+        gamma_1 += (r[i+1]-r_mean)*(r[i]-r_mean)
+
+    gamma_1 *= (1/(r.size-2))
+    corr_coef = gamma_1/gamma_0
+
+    a = (1-np.sqrt(1-4*corr_coef**2))/(2*corr_coef)
+
+    # find v, the residual error of our data vector r
+    residuals = y + b*x
+    v = np.zeros([r.size])
+    for i in range(1, r.size):
+        v[i] = residuals[i-1] + a*v[i-1]
+
+    return -b[0,0], a, v
 
 
 

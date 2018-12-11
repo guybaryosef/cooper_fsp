@@ -11,11 +11,13 @@ import pandas as pd
 import q1  # question 1
 import copy
 import cvxpy
+import matplotlib.pyplot as plt
+
 
 def main():
 
     # get data for the user-specified year
-    year = 2000
+    year = 2002
     #year = input('Input year to test between 2000 and 2016: ')
     
     # part a)
@@ -31,18 +33,17 @@ def main():
     org_row, org_sigma = row_sigma(weights, year)
     l1_row, l1_sigma = row_sigma(l1_weights, year)
     l2_row, l2_sigma = row_sigma(l2_weights, year)
-    
+
     print('Orig. Sharpe ratios :', org_row/org_sigma)
     print('Sharpe ratios for S1:', l1_row/l1_sigma)
     print('Sharpe ratios for S2:', l2_row/l2_sigma)
 
     # part b)
-    tau = 0.5
-    row = 0.5
+    tau = np.linspace(0, 5, 10)
+    row = np.linspace(0,10,10)
     data = pd.read_csv('./by_years/48_IP_eq_w_daily_returns_'+str(year)+'.csv').values[:,1:]
     
-    lasso_weights = optimizedLassoProblem(data, row, tau)
-    lasso_row, lasso_sigma = row_sigma(lasso_weights, year)
+    optimizedLassoProblem(data, row, tau, year)
 
 
 
@@ -54,32 +55,40 @@ def sparcifyWeights(weights, p):
     the p-norm, as well as the optimal number of non-zero
     coefficients (weights). 
     '''
-    sparce_weights = weights
+    sparce_weights = copy.deepcopy(weights)
     k_val = []
     for i in range(weights.shape[1]):
-        norm_val = np.linalg.norm(weights[:,i], ord=p)
-        min_val = norm_val
+        min_val = 0.1*np.linalg.norm(weights[:,i], ord=p)
         best_val = 48
-        best_weights = []
+        best_weights = weights[:,i]
 
+        # k is the number of non-zero coefficients
         for k in range(1, weights[:,i].size):
-            tmp = copy.deepcopy(weights[:,i])
+            g_k = copy.deepcopy(weights[:,i])
             count_to_zero = weights[:,i].size - k
             
             while count_to_zero > 0:
-                to_zero = np.union1d(np.where(abs(tmp) == abs(tmp).min()), np.where(abs(tmp) > 0))
+                if np.sum(abs(g_k)) == 0:
+                    count_to_zero = 0
+                    continue
+                to_zero = np.where( abs(g_k) == np.min(abs(g_k)[np.nonzero(abs(g_k))]))[0]
                 if count_to_zero < to_zero.size:
                     to_zero = to_zero[:count_to_zero]
                 for j in to_zero:
-                    tmp[j] = 0
+                    g_k[j] = 0
                 count_to_zero -= to_zero.size
             
-            tmp = tmp/np.sum(tmp)
-            tmp_norm = np.linalg.norm(weights[:,i] - tmp, ord=p)
-            if tmp_norm < min_val:
-                min_val = tmp_norm
+            if np.sum(g_k) == 0:
+                continue
+
+            g_k /= np.sum(g_k)
+            
+            # test for the sparsification condition
+            g_k_norm = np.linalg.norm(weights[:,i] - g_k, ord=p)
+            if g_k_norm < min_val:
+                min_val = g_k_norm
                 best_val = k
-                best_weights = tmp
+                best_weights = g_k
             
         sparce_weights[:,i] = best_weights
         k_val.append(best_val)
@@ -148,7 +157,7 @@ def getWeights(year):
 
 
 # part b)
-def optimizedLassoProblem(data, row, input_tau):
+def optimizedLassoProblem(data, row_vals, input_tau_vals, year):
     '''
     Solves the optimization problem to find the optimal
     sparse portfolio weights using Lasso Regression, under
@@ -156,23 +165,53 @@ def optimizedLassoProblem(data, row, input_tau):
     linear combination of the weights*mean_of_each_stock sums
     to inputted 'row' value. 
 
-    The regularization hyperparameter for the L1-penality is 'tau'.
+    This function loops over the optimization problem with the 
+    inputted values of row and tau and plots the results (this 
+    is akin to grid searching, only instead of searching for 
+    values we keep track of them and then plot our results.
+
+    We plot a rho-sigma graph (return-risk graph) and a scatter
+    plot of the sparce portfolio S(w) for each rho and tau.
     '''
-    # helper calculations
-    row_1 = row*np.ones([data.shape[0], 1])
-    mu_hat = np.mean(data, axis=0)
+    _, covMat = q1.find_mean_cov(year)
+    sigma_vals = []
+    S1_vals = []
 
-    w = cvxpy.Variable([data.shape[1], 1])   # our variable
-    tau = cvxpy.Parameter(nonneg=True)
-    tau.value = input_tau
-    # our least squares equation
-    objective = cvxpy.Minimize(cvxpy.norm(row_1 - data * w, 2)**2 + tau*cvxpy.norm1(w))
-    constraints = [cvxpy.sum(w) == 1, cvxpy.sum(np.transpose(mu_hat) @ w) == row]
-    # - tau*cvxpy.norm(w, 1)
-    opt_prob = cvxpy.Problem(objective, constraints)
-    opt_prob.solve()
+    for row in row_vals:
+        for input_tau in input_tau_vals:
+            # helper calculations
+            row_1 = row*np.ones([data.shape[0], 1])
+            mu_hat = np.mean(data, axis=0)
 
-    return w.value
+            w = cvxpy.Variable([data.shape[1], 1])   # our variable
+            tau = cvxpy.Parameter(nonneg=True)
+            tau.value = input_tau
+            # our least squares equation
+            objective = cvxpy.Minimize(cvxpy.norm(row_1 - data * w, 2)**2 + tau*cvxpy.norm1(w))
+            constraints = [cvxpy.sum(w) == 1, cvxpy.sum(np.transpose(mu_hat) @ w) == row]
+            # - tau*cvxpy.norm(w, 1)
+            opt_prob = cvxpy.Problem(objective, constraints)
+            opt_prob.solve()
+
+            S1_vals.append(sparcifyWeights(w.value, 1))
+        
+        sigma_vals.append(np.sum(np.sqrt( np.transpose(w.value) @ covMat.values @ w.value))) 
+
+    plt.figure()
+    plt.plot(sigma_vals, row_vals)
+    plt.xlabel('$\sigma$')
+    plt.ylabel('$\\rho$')
+    plt.title('The Optimization functions Return-Risk plot with tau=' + str(input_tau))
+    plt.savefig('./outputs/FSP_pset1_q2_rho_sigma_plot')
+
+    plt.figure()
+    plt.scatter(sigma_vals, row_vals, S1_vals)
+    plt.xlabel('$\sigma$')
+    plt.ylabel('$\\rho$')
+    plt.zlabel('Sparce Portfolio')
+    plt.title('The Sparce Portfolios')
+    plt.savefig('./outputs/FSP_pset1_q2_scatter_plot')
+    plt.show()
 
 
 
