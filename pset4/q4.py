@@ -16,16 +16,18 @@ def main():
     pp.preprocess()
 
     # get data for the user-specified year
-    year = '2004'
-    #year = input('Input year to test between 2000 and 2016: ')
+    year = input('Input year to test between 2000 and 2016: ')
     sp_daily_returns = pd.read_csv('./by_years/SP_daily_returns_'+year+'.csv')
     ff48_daily_returns = pd.read_csv('./by_years/48_IP_eq_w_daily_returns_'+year+'.csv')
 
     x = np.array(ff48_daily_returns[['Coal ', 'Oil  ']])
 
     # part a)
-    eta = x[1:,:] - x[:-1,:]
-    print('Correlation coefficient of the eta\'s is:', np.corrcoef(eta))
+    # we are able to do this because of our assumption that v is white
+    eyda1 =np.array([1, -0.7, 0, -0.6])
+    eyda2 = np.array([0, -0.5, 1, -0.7])
+    corr_coef = np.sum(eyda1*eyda2)/np.sqrt(np.sum(eyda1**2)*np.sum(eyda2**2))
+    print('Correlation coefficient of the eta\'s is:', corr_coef)
 
     # part b)
     _, _, y1, y2 = simulateVARMA()
@@ -36,14 +38,14 @@ def main():
     print('\ny1 lag covariance:', lag_cov_y1)
     print('y2 lag covariance:', lag_cov_y2)
 
-    print('The covariances of y1 do not decay in the same magnitude',
-        'as the covariances of y2, and so indicate that y2 is stationary',
+    print('\nThe covariances of y1 do not decay in the same magnitude',
+        'as the covariances of y2, and so indicate that y2 is stationary ',
         'while y1 is not.')
 
     # part d)
-    print('\nLooking at the graphs, we can see that y1 closely follows x1, giving'
-        'it a non-zero mean and therefore making it not stationary.' 
-        'Meanwhile y2 seems to exhibit variations around the value 0, hinting' 
+    print('\nLooking at the graphs, we can see that y1 closely follows x1, giving',
+        'it a non-zero mean and therefore making it not stationary.', 
+        'Meanwhile y2 seems to exhibit variations around the value 0, hinting', 
         'that it has 0 mean.')
 
 
@@ -79,7 +81,7 @@ def simulateVARMA():
         plt.xlabel('Time Steps')
         plt.ylabel('Signal Value')
         plt.legend()
-        plt.savefig('./outputs/FSP_tsa_q4_b_rep'+str(rep+1))
+        plt.savefig('./outputs/FSP_pset4_q4_b_rep'+str(rep+1)+'.pdf')
 
     return x[:,0], x[:,1], y[:,0], y[:,1]
 

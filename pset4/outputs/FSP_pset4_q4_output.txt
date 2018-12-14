@@ -1,0 +1,12 @@
+Input year to test between 2000 and 2016: 2014
+
+Correlation coefficient of the eta's is: 0.4291708702973372
+
+y1 lag covariance: [2.99478721 1.64040227 1.82761879 1.67608279 1.65215557 1.50850371
+ 1.43030498 1.2199118  1.15131241 1.12628118 1.0913395 ]
+y2 lag covariance: [ 1.20022819 -0.4088809  -0.11422747  0.00913896 -0.09733766  0.08067947
+ -0.14543984  0.16836518 -0.01920812  0.03065355 -0.01096462]
+
+The covariances of y1 do not decay in the same magnitude as the covariances of y2, and so indicate that y2 is stationary  while y1 is not.
+
+Looking at the graphs, we can see that y1 closely follows x1, giving it a non-zero mean and therefore making it not stationary. Meanwhile y2 seems to exhibit variations around the value 0, hinting that it has 0 mean.

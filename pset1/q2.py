@@ -12,13 +12,13 @@ import q1  # question 1
 import copy
 import cvxpy
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 
 def main():
 
     # get data for the user-specified year
-    year = 2002
-    #year = input('Input year to test between 2000 and 2016: ')
+    year = input('Input year to test between 2000 and 2016: ')
     
     # part a)
     # weights of 3 randomly chosen points on the efficient frontier
@@ -39,8 +39,8 @@ def main():
     print('Sharpe ratios for S2:', l2_row/l2_sigma)
 
     # part b)
-    tau = np.linspace(0, 5, 10)
-    row = np.linspace(0,10,10)
+    tau = np.linspace(0, 5000, 20)
+    row = np.linspace(-5,5,20)
     data = pd.read_csv('./by_years/48_IP_eq_w_daily_returns_'+str(year)+'.csv').values[:,1:]
     
     optimizedLassoProblem(data, row, tau, year)
@@ -157,7 +157,7 @@ def getWeights(year):
 
 
 # part b)
-def optimizedLassoProblem(data, row_vals, input_tau_vals, year):
+def optimizedLassoProblem(data, ro_vals, input_tau_vals, year):
     '''
     Solves the optimization problem to find the optimal
     sparse portfolio weights using Lasso Regression, under
@@ -166,7 +166,7 @@ def optimizedLassoProblem(data, row_vals, input_tau_vals, year):
     to inputted 'row' value. 
 
     This function loops over the optimization problem with the 
-    inputted values of row and tau and plots the results (this 
+    inputted values of ro and tau and plots the results (this 
     is akin to grid searching, only instead of searching for 
     values we keep track of them and then plot our results.
 
@@ -174,44 +174,74 @@ def optimizedLassoProblem(data, row_vals, input_tau_vals, year):
     plot of the sparce portfolio S(w) for each rho and tau.
     '''
     _, covMat = q1.find_mean_cov(year)
-    sigma_vals = []
-    S1_vals = []
 
-    for row in row_vals:
+    tau_subset = [input_tau_vals[0], input_tau_vals[input_tau_vals.size//2], input_tau_vals[-1]]
+
+    # plot sigma vs. ro points, for fixed tau
+    plt.figure()
+
+    for input_tau in tau_subset:
+        sigma_vals = []
+
+        for ro in ro_vals:
+            # helper calculations
+            ro_1 = ro*np.ones([data.shape[0], 1])
+            mu_hat = np.mean(data, axis=0)
+
+            w = cvxpy.Variable([data.shape[1], 1])   # our variable
+            tau = cvxpy.Parameter(nonneg=True)
+            tau.value = input_tau
+
+            # our least squares equation
+            objective = cvxpy.Minimize(cvxpy.norm(ro_1 - data * w, 2)**2 + tau*cvxpy.norm1(w))
+            constraints = [cvxpy.sum(w) == 1, cvxpy.sum(np.transpose(mu_hat) @ w) == ro]
+            # - tau*cvxpy.norm(w, 1)
+            opt_prob = cvxpy.Problem(objective, constraints)
+            opt_prob.solve()
+        
+            sigma_vals.append(np.sum(np.sqrt( np.transpose(w.value) @ covMat.values @ w.value)))
+
+        plt.plot(sigma_vals, ro_vals, label='Tau = '+str(input_tau))
+
+    plt.xlabel('$\sigma$')
+    plt.ylabel('$\\rho$')
+    plt.title('The Optimization functions Return-Risk plot with fixed Tau')
+    plt.legend()
+    plt.savefig('./outputs/FSP_pset1_q2_rho_sigma_plot.pdf')
+
+    points_p = []
+    points_t = []
+    points_n = []
+    for ro in ro_vals:
         for input_tau in input_tau_vals:
             # helper calculations
-            row_1 = row*np.ones([data.shape[0], 1])
+            ro_1 = ro*np.ones([data.shape[0], 1])
             mu_hat = np.mean(data, axis=0)
 
             w = cvxpy.Variable([data.shape[1], 1])   # our variable
             tau = cvxpy.Parameter(nonneg=True)
             tau.value = input_tau
             # our least squares equation
-            objective = cvxpy.Minimize(cvxpy.norm(row_1 - data * w, 2)**2 + tau*cvxpy.norm1(w))
-            constraints = [cvxpy.sum(w) == 1, cvxpy.sum(np.transpose(mu_hat) @ w) == row]
+            objective = cvxpy.Minimize(cvxpy.norm(ro_1 - data * w, 2)**2 + tau*cvxpy.norm1(w))
+            constraints = [cvxpy.sum(w) == 1, cvxpy.sum(np.transpose(mu_hat) @ w) == ro]
             # - tau*cvxpy.norm(w, 1)
             opt_prob = cvxpy.Problem(objective, constraints)
             opt_prob.solve()
 
-            S1_vals.append(sparcifyWeights(w.value, 1))
+            points_p.append(ro)
+            points_t.append(input_tau)
+            points_n.append(np.linalg.norm(sparcifyWeights(w.value, 1)[0][:,0], ord=1))
         
-        sigma_vals.append(np.sum(np.sqrt( np.transpose(w.value) @ covMat.values @ w.value))) 
+    # plotting the norm of the sparce weights versus tau and ro
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
 
-    plt.figure()
-    plt.plot(sigma_vals, row_vals)
-    plt.xlabel('$\sigma$')
-    plt.ylabel('$\\rho$')
-    plt.title('The Optimization functions Return-Risk plot with tau=' + str(input_tau))
-    plt.savefig('./outputs/FSP_pset1_q2_rho_sigma_plot')
-
-    plt.figure()
-    plt.scatter(sigma_vals, row_vals, S1_vals)
-    plt.xlabel('$\sigma$')
-    plt.ylabel('$\\rho$')
-    plt.zlabel('Sparce Portfolio')
+    ax.scatter(points_t, points_p, points_n)
+    ax.set_xlabel('$\\tau$')
+    ax.set_ylabel('$\\rho$')
+    ax.set_zlabel('Sparce Portfolio')
     plt.title('The Sparce Portfolios')
-    plt.savefig('./outputs/FSP_pset1_q2_scatter_plot')
-    plt.show()
+    plt.savefig('./outputs/FSP_pset1_q2_scatter_plot.pdf')
 
 
 

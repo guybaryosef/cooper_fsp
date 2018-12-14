@@ -15,43 +15,44 @@ from arch.univariate import arch_model
 def main():
 
     # get data for the user-specified year
-    year='2002'
-    #year = input('Input year to test between 2000 and 2016: ')
+    year = input('Input year to test between 2000 and 2016: ')
     sp_daily_returns = pd.read_csv('./by_years/SP_daily_returns_'+year+'.csv')
     ff48_daily_returns = pd.read_csv('./by_years/48_IP_eq_w_daily_returns_'+year+'.csv')
 
     r = ff48_daily_returns['Coal ']
     
     # User specified coefficients:
+    sigma_v = 1
     # arma coefficients
-    b = [0.3]
-    a = [0.4]
+    b = [3]
+    a = [0.2]
     # garch coefficients
-    c = [0.2, 0.3]
-    d = [0.4]
+    c = [0.1, 0.3]
+    d = [0.2]
 
     # part a)
     print('First with a gaussian distribution:')
-    r = generateARMA_GARCH(a, b, c, d, 250)
+    r = generateARMA_GARCH(a, b, c, d, 250, sigma_v)
 
     # part b)
     b_est, a_est, v_est = fit_ARMA_to_stock(r)
-    print(b_est, a_est)
+    print('b[0] =', b_est, '\ta[0] = ', a_est, end='\n\n')
     
     # part c)
-    # get_GARCH_coeff(r)
+    get_GARCH_coeff(v_est)
 
     # part d)
     print('\nNow with a student-t distribution:')
-    r2 = generateARMA_GARCH(a, b, c, d, 250, 'student t')
+    r2 = generateARMA_GARCH(a, b, c, d, 250, sigma_v, 'student t')
     b_est2, a_est2, v_est2 = fit_ARMA_to_stock(r2)
-    print(b_est2, a_est2)
-    # get_GARCH_coeff(r2)
+    print('b[0] =', b_est2, '\ta[0] = ', a_est2, end='\n\n')
+
+    get_GARCH_coeff(v_est2)
     
 
 
 # part a & e)
-def generateARMA_GARCH(a, b, c, d, step_count, distribution='gaussian', vsigma=1):
+def generateARMA_GARCH(a, b, c, d, step_count, vsigma=1, distribution='gaussian'):
     '''
     Given the ARMA(1,1) coefficients b and a and the GARCH(1,1)
     coefficients c and d, generate a fictitious stock
@@ -76,7 +77,7 @@ def generateARMA_GARCH(a, b, c, d, step_count, distribution='gaussian', vsigma=1
 
         # ARMA simulation
         fictitious_stock[i] = b[0]*fictitious_stock[i-1] + v[i] - a[0]*v[i-1]
-    
+
     n = np.arange(0, 250)
     plt.figure()
     plt.plot(n, sigma, label='Sigma')
@@ -86,14 +87,14 @@ def generateARMA_GARCH(a, b, c, d, step_count, distribution='gaussian', vsigma=1
     plt.xlabel('time')
     plt.ylabel('Value')
     plt.title('Signal Components')
-    plt.savefig('./outputs/FSP_tsa_q3_'+distribution)
+    plt.savefig('./outputs/FSP_tsa_q3_'+distribution+'.pdf')
 
     return fictitious_stock
 
 
 
 # part b)
-def fit_ARMA_to_stock(r, v_sigma=1):
+def fit_ARMA_to_stock(r):
     '''
     Given a stock, this function fits an ARMA(1,1)
     model to it using least squares.
@@ -103,31 +104,35 @@ def fit_ARMA_to_stock(r, v_sigma=1):
 
     This function returns the AR and MA coefficients.
     '''
-    # least squares set-up
+    # find the b coefficient
     y = np.transpose(np.array(r[1:], ndmin=2))
     x = np.transpose(np.array(r[:-1], ndmin=2))
     b = np.linalg.inv(np.transpose(x) @ x) @ np.transpose(x) @ y 
 
-    # calculate the lag 0 and 1 covariance of r, to find a
-    gamma_0 = np.cov(r)
-
-    r_mean = r.mean()
+    # find the a coefficient
+    # calculate the covariance of r of lags 0 and 1
+    residuals = y - x @ b
+    residuals_mean = residuals.mean()
     gamma_1 = 0
-    for i in range(r.size-2):
-        gamma_1 += (r[i+1]-r_mean)*(r[i]-r_mean)
+    gamma_0 = 0
+    for i in range(residuals.size-1):
+        gamma_1 += (residuals[i+1,0]-residuals_mean)*(residuals[i,0]-residuals_mean)
+        gamma_0 += (residuals[i,0]-residuals_mean)*(residuals[i,0]-residuals_mean)
+    gamma_0 += (residuals[-1,0]-residuals_mean)*(residuals[-1,0]-residuals_mean)
 
-    gamma_1 *= (1/(r.size-2))
+    gamma_1 *= (1/(residuals.size-2))
+    gamma_0 *= (1/(residuals.size-1))
+    
     corr_coef = gamma_1/gamma_0
-
-    a = (1-np.sqrt(1-4*corr_coef**2))/(2*corr_coef)
+    
+    a = (1+np.sqrt(1-4*corr_coef**2))/(2*corr_coef)
 
     # find v, the residual error of our data vector r
-    residuals = y + b*x
     v = np.zeros([r.size])
-    for i in range(1, r.size):
-        v[i] = residuals[i-1] + a*v[i-1]
+    for i in range(1, r.size-1):
+        v[i] = residuals[i] + a*v[i-1]
 
-    return -b[0,0], a, v
+    return b[0,0], a, v
 
 
 

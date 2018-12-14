@@ -8,12 +8,11 @@
 import preprocess as pp
 import numpy as np
 import pandas as pd
-
+import matplotlib.pyplot as plt
 
 def main():
 
     # get data for the user-specified year
-    year = 2000
     year = input('Input year to test between 2000 and 2016: ')
     sp_daily_returns = pd.read_csv('./by_years/SP_daily_returns_'+year+'.csv')
     ff48_daily_returns = pd.read_csv('./by_years/48_IP_eq_w_daily_returns_'+year+'.csv')
@@ -29,6 +28,16 @@ def main():
     print('delta 2:', delta2, '\tweight 2:', w2)
     print('delta 12:', delta12, '\tweight 12:', w12)
 
+    lag_count = 50 # user defined
+    lags = np.arange(0, lag_count, 1)
+    gammas = cov_coeff(r2, r1, delta12, w12, lag_count)
+    plt.figure()
+    plt.stem(lags, gammas)
+    plt.xlabel('Lag')
+    plt.ylabel('Covariance')
+    plt.title('Covariance of a pair of benchmarked assets')
+    plt.savefig('./outputs/FSP_pset4_q2_benchmark_assets.pdf')
+
     print('\nSimulating cointegrated time series:')
     co_r1, co_r2 = generate_cointegrated(0.5, 0.5) # just generate it ourselves
     co_delta1, co_w1 = ls_fitting(co_r1)
@@ -38,6 +47,14 @@ def main():
     print('cointegrated delta 1:', co_delta1, '\tcointegrated weight 1:', co_w1)
     print('cointegrated delta 2:', co_delta2, '\tcointegrated weight 2:', co_w2)
     print('cointegrated delta 12:', co_delta12, '\tcointegrated weight 12:', co_w12)
+
+    co_gammas = cov_coeff(co_r2, co_r1, co_delta12, co_w12, lag_count)
+    plt.figure()
+    plt.stem(lags, co_gammas)
+    plt.xlabel('Lag')
+    plt.ylabel('Covariance')
+    plt.title('Covariance of a pair of cointegrated Assets')
+    plt.savefig('./outputs/FSP_pset4_q2_cointegrated_assets.pdf')
 
 
 
@@ -62,7 +79,7 @@ def ls_fitting(x_in, y_in=None):
 
 
 
-def cov_coeff(r2, r1, delta12, w12):
+def cov_coeff(r2, r1, delta12, w12, lag_count):
     '''
     Finds the covariance coefficients of the error term
     of the AR(1) model predicting r2 from r1, with weight
@@ -70,14 +87,15 @@ def cov_coeff(r2, r1, delta12, w12):
     0 to 20.
     '''
     e = r1 - delta12 - w12*r2
-
     e_mean = np.mean(e)
     gamma = []
-    for k in range(20):
-        gamma_cur = 1/(e.size-k)
+    for k in range(lag_count):
+        cur = 0
         for n in range(e.size-k-1):
-            gamma_cur += (e[n+k]-e_mean)*(e[n]-e_mean)
-        gamma.append(gamma_cur)
+            cur += (e[n+k]-e_mean)*(e[n]-e_mean)
+        cur *= 1/(e.size-k)
+
+        gamma.append(cur)
     return gamma
     
 

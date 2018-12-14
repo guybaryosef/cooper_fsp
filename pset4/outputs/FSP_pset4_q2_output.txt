@@ -1,0 +1,11 @@
+Input year to test between 2000 and 2016: 2014
+
+Checking the cointegratedness of Coal and Oil stocks:
+delta 1: -0.1458407884589544 	weight 1: -0.09551865619322014
+delta 2: -0.16132111020581405 	weight 2: 0.046772588723727936
+delta 12: 0.005812824379336147 	weight 12: 0.7609382868437351
+
+Simulating cointegrated time series:
+cointegrated delta 1: -0.01087326403917283 	cointegrated weight 1: 0.9387974798336886
+cointegrated delta 2: 0.0006699266921962859 	cointegrated weight 2: 0.9477410223788338
+cointegrated delta 12: -0.03147608612381718 	cointegrated weight 12: -0.9270585219058369

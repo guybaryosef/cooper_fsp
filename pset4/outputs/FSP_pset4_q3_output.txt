@@ -1,0 +1,77 @@
+Input year to test between 2000 and 2016: 2014
+
+First with a gaussian distribution:
+b[0] = 3.0000000000000004 	a[0] =  3.9770655840862488
+
+Iteration:      1,   Func. Count:      6,   Neg. LLF: 84086.24322049925
+Iteration:      2,   Func. Count:     12,   Neg. LLF: 83909.65983989136
+Iteration:      3,   Func. Count:     18,   Neg. LLF: 83909.58473243032
+Iteration:      4,   Func. Count:     24,   Neg. LLF: 83909.51540860257
+Iteration:      5,   Func. Count:     30,   Neg. LLF: 83909.51373979884
+Iteration:      6,   Func. Count:     36,   Neg. LLF: 83909.51372259067
+Optimization terminated successfully.    (Exit mode 0)
+            Current function value: 83909.51372131173
+            Iterations: 6
+            Function evaluations: 36
+            Gradient evaluations: 6
+                     Constant Mean - GARCH Model Results                      
+==============================================================================
+Dep. Variable:                      y   R-squared:                       0.000
+Mean Model:             Constant Mean   Adj. R-squared:                  0.000
+Vol Model:                      GARCH   Log-Likelihood:               -83909.5
+Distribution:                  Normal   AIC:                           167827.
+Method:            Maximum Likelihood   BIC:                           167841.
+                                        No. Observations:                  250
+Date:                Fri, Dec 14 2018   Df Residuals:                      246
+Time:                        17:53:52   Df Model:                            4
+                                Mean Model                               
+=========================================================================
+                  coef    std err          t      P>|t|  95.0% Conf. Int.
+-------------------------------------------------------------------------
+mu         8.9602e+144        nan        nan        nan [    nan,    nan]
+                             Volatility Model                            
+=========================================================================
+                  coef    std err          t      P>|t|  95.0% Conf. Int.
+-------------------------------------------------------------------------
+omega      2.3851e+290        nan        nan        nan [    nan,    nan]
+alpha[1]        0.9143      0.295      3.097  1.954e-03 [  0.336,  1.493]
+beta[1]         0.0000  5.785e-02      0.000      1.000 [ -0.113,  0.113]
+=========================================================================
+
+Covariance estimator: robust
+
+Now with a student-t distribution:
+b[0] = 3.0 	a[0] =  -2.696063149717304
+
+Iteration:      1,   Func. Count:      6,   Neg. LLF: 60231.00516107181
+Iteration:      2,   Func. Count:     12,   Neg. LLF: 60039.768490618284
+Optimization terminated successfully.    (Exit mode 0)
+            Current function value: 60039.768484000786
+            Iterations: 2
+            Function evaluations: 13
+            Gradient evaluations: 2
+                     Constant Mean - GARCH Model Results                      
+==============================================================================
+Dep. Variable:                      y   R-squared:                       0.000
+Mean Model:             Constant Mean   Adj. R-squared:                  0.000
+Vol Model:                      GARCH   Log-Likelihood:               -60039.8
+Distribution:                  Normal   AIC:                           120088.
+Method:            Maximum Likelihood   BIC:                           120102.
+                                        No. Observations:                  250
+Date:                Fri, Dec 14 2018   Df Residuals:                      246
+Time:                        17:53:52   Df Model:                            4
+                                Mean Model                               
+=========================================================================
+                  coef    std err          t      P>|t|  95.0% Conf. Int.
+-------------------------------------------------------------------------
+mu         1.9718e+103        nan        nan        nan [    nan,    nan]
+                             Volatility Model                            
+=========================================================================
+                  coef    std err          t      P>|t|  95.0% Conf. Int.
+-------------------------------------------------------------------------
+omega      4.2284e+207        nan        nan        nan [    nan,    nan]
+alpha[1]        1.0000      0.319      3.135  1.718e-03 [  0.375,  1.625]
+beta[1]     1.4296e-12        nan        nan        nan [    nan,    nan]
+=========================================================================
+
+Covariance estimator: robust
