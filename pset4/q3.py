@@ -13,14 +13,7 @@ from arch.univariate import arch_model
 
 
 def main():
-
-    # get data for the user-specified year
-    year = input('Input year to test between 2000 and 2016: ')
-    sp_daily_returns = pd.read_csv('./by_years/SP_daily_returns_'+year+'.csv')
-    ff48_daily_returns = pd.read_csv('./by_years/48_IP_eq_w_daily_returns_'+year+'.csv')
-
-    r = ff48_daily_returns['Coal ']
-    
+        
     # User specified coefficients:
     sigma_v = 1
     # arma coefficients

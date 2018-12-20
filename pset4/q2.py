@@ -17,9 +17,10 @@ def main():
     sp_daily_returns = pd.read_csv('./by_years/SP_daily_returns_'+year+'.csv')
     ff48_daily_returns = pd.read_csv('./by_years/48_IP_eq_w_daily_returns_'+year+'.csv')
 
-    print('Checking the cointegratedness of Coal and Oil stocks:')
+    print('Checking the cointegrated-ness of Coal and Oil assets:')
     r1 = ff48_daily_returns['Coal ']
     r2 = ff48_daily_returns['Oil  ']
+
     delta1, w1 = ls_fitting(r1)
     delta2, w2 = ls_fitting(r2)
     delta12, w12 = ls_fitting(r2, r1)
